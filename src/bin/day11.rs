@@ -106,16 +106,12 @@ impl Grid {
 	fn adjacent(&self, n_row: usize, n_col: usize) -> Vec<Cell> {
 		let (row_start, row_end) = if n_row == 0 {
 			(0, 2)
-		} else if n_row + 1 == N_ROWS {
-			(n_row - 1, n_row + 1)
 		} else {
 			(n_row - 1, n_row + 2)
 		};
 
 		let (col_start, col_end) = if n_col == 0 {
 			(0, 2)
-		} else if n_col + 1 == N_COLS {
-			(n_col - 1, n_col + 1)
 		} else {
 			(n_col - 1, n_col + 2)
 		};
@@ -128,12 +124,11 @@ impl Grid {
 			.map(|(i_row, row)| {
 				row.0
 					.iter()
-					.copied()
 					.enumerate()
 					.skip(col_start)
 					.take(col_end - col_start)
 					.filter(|(i_col, _)| *i_col != n_col || i_row != n_row)
-					.map(|(_, cell)| cell)
+					.map(|(_, cell)| *cell)
 					.collect::<Vec<_>>()
 			})
 			.flatten()
