@@ -2,49 +2,27 @@ const N_ROWS: usize = 93;
 const N_COLS: usize = 95;
 const DATA: &str = include_str!("day11.txt");
 
-#[derive(Copy, Clone, PartialEq)]
-enum Cell {
-	Empty,
-	Floor,
-	Taken,
-}
-
 #[derive(Copy, Clone)]
-struct Row([Cell; N_COLS]);
+struct Row([u8; N_COLS]);
 #[derive(Copy, Clone)]
 struct Grid([Row; N_ROWS]);
 
-impl Cell {
-	fn new(c: char) -> Option<Self> {
-		match c {
-			'L' => Some(Self::Empty),
-			'.' => Some(Self::Floor),
-			'#' => Some(Self::Taken),
-			_ => None,
-		}
-	}
-
-	fn is_taken(&self) -> bool {
-		*self == Self::Taken
-	}
-}
-
 impl Default for Row {
 	fn default() -> Self {
-		Self([Cell::Floor; 95])
+		Self([b'.'; 95])
 	}
 }
 
 impl Row {
 	fn parse(s: &str) -> Self {
-		let mut buf = [Cell::Floor; 95];
-		for (i, c) in s.chars().enumerate() {
-			buf[i] = Cell::new(c).unwrap_or_else(|| panic!("invalid char: {}", c));
+		let mut buf = [b'.'; 95];
+		for (i, c) in s.as_bytes().iter().enumerate() {
+			buf[i] = *c;
 		}
 		Self(buf)
 	}
 
-	fn get(&self, n: usize) -> Option<&Cell> {
+	fn get(&self, n: usize) -> Option<&u8> {
 		self.0.get(n)
 	}
 }
@@ -74,48 +52,36 @@ impl Grid {
 		has_changed
 	}
 
-	fn get_cell(&self, n_row: usize, n_col: usize) -> Option<Cell> {
+	fn get_cell(&self, n_row: usize, n_col: usize) -> Option<u8> {
 		self.0.get(n_row).and_then(|r| r.get(n_col)).copied()
 	}
 
-	fn calc_cell_next(&self, n_row: usize, n_col: usize) -> (bool, Cell) {
+	fn calc_cell_next(&self, n_row: usize, n_col: usize) -> (bool, u8) {
 		let c = self.get_cell(n_row, n_col).unwrap();
 
 		match c {
-			Cell::Empty
-				if self
-					.adjacent(n_row, n_col)
-					.iter()
-					.all(|cell| !cell.is_taken()) =>
+			b'L' if self.adjacent(n_row, n_col).iter().all(|c| *c != b'#') => (true, b'#'),
+			b'#' if self
+				.adjacent(n_row, n_col)
+				.iter()
+				.filter(|c| **c == b'#')
+				.count() >= 4 =>
 			{
-				(true, Cell::Taken)
-			}
-			Cell::Taken
-				if self
-					.adjacent(n_row, n_col)
-					.iter()
-					.filter(|c| c.is_taken())
-					.count() >= 4 =>
-			{
-				(true, Cell::Empty)
+				(true, b'L')
 			}
 			_ => (false, c),
 		}
 	}
 
-	fn adjacent(&self, n_row: usize, n_col: usize) -> Vec<Cell> {
+	fn adjacent(&self, n_row: usize, n_col: usize) -> Vec<u8> {
 		let (row_start, row_end) = if n_row == 0 {
 			(0, 2)
-		} else if n_row + 1 == N_ROWS {
-			(n_row - 1, n_row + 1)
 		} else {
 			(n_row - 1, n_row + 2)
 		};
 
 		let (col_start, col_end) = if n_col == 0 {
 			(0, 2)
-		} else if n_col + 1 == N_COLS {
-			(n_col - 1, n_col + 1)
 		} else {
 			(n_col - 1, n_col + 2)
 		};
@@ -145,7 +111,7 @@ impl Grid {
 
 		self.0
 			.iter()
-			.map(|row| row.0.iter().filter(|c| c.is_taken()).count())
+			.map(|row| row.0.iter().filter(|c| **c == b'#').count())
 			.sum()
 	}
 }
