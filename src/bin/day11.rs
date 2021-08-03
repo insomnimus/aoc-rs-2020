@@ -1,5 +1,16 @@
 const N_ROWS: usize = 93;
 const N_COLS: usize = 95;
+const DELTAS: [(isize, isize); 8] = [
+	(-1, -1),
+	(-1, 0),
+	(-1, 1),
+	(0, -1),
+	(0, 1),
+	(1, -1),
+	(1, 0),
+	(1, 1),
+];
+
 const DATA: &str = include_str!("day11.txt");
 
 #[derive(Copy, Clone, PartialEq)]
@@ -43,12 +54,7 @@ impl Row {
 		}
 		Self(buf)
 	}
-
-	fn get(&self, n: usize) -> Option<&Cell> {
-		self.0.get(n)
-	}
 }
-
 impl Grid {
 	fn parse(s: &str) -> Self {
 		let mut buf = [Row::default(); 93];
@@ -74,12 +80,8 @@ impl Grid {
 		has_changed
 	}
 
-	fn get_cell(&self, n_row: usize, n_col: usize) -> Option<Cell> {
-		self.0.get(n_row).and_then(|r| r.get(n_col)).copied()
-	}
-
 	fn calc_cell_next(&self, n_row: usize, n_col: usize) -> (bool, Cell) {
-		let c = self.get_cell(n_row, n_col).unwrap();
+		let c = self.get_unchecked(n_row, n_col);
 
 		match c {
 			Cell::Empty
@@ -104,34 +106,21 @@ impl Grid {
 	}
 
 	fn adjacent(&self, n_row: usize, n_col: usize) -> Vec<Cell> {
-		let (row_start, row_end) = if n_row == 0 {
-			(0, 2)
-		} else {
-			(n_row - 1, n_row + 2)
-		};
-
-		let (col_start, col_end) = if n_col == 0 {
-			(0, 2)
-		} else {
-			(n_col - 1, n_col + 2)
-		};
-
-		self.0
+		DELTAS
 			.iter()
-			.enumerate()
-			.skip(row_start)
-			.take(row_end - row_start)
-			.map(|(i_row, row)| {
-				row.0
-					.iter()
-					.enumerate()
-					.skip(col_start)
-					.take(col_end - col_start)
-					.filter(|(i_col, _)| *i_col != n_col || i_row != n_row)
-					.map(|(_, cell)| *cell)
-					.collect::<Vec<_>>()
+			.filter_map(|(delta_row, delta_col)| {
+				let r = n_row as isize + delta_row;
+				if !(r >= 0 && r < N_ROWS as isize) {
+					return None;
+				}
+				let c = n_col as isize + delta_col;
+				if !(c >= 0 && c < N_COLS as isize) {
+					None
+				} else {
+					Some((r as usize, c as usize))
+				}
 			})
-			.flatten()
+			.map(|(r, c)| self.get_unchecked(r, c))
 			.collect()
 	}
 
@@ -142,6 +131,10 @@ impl Grid {
 			.iter()
 			.map(|row| row.0.iter().filter(|c| c.is_taken()).count())
 			.sum()
+	}
+
+	fn get_unchecked(&self, n_row: usize, n_col: usize) -> Cell {
+		self.0[n_row].0[n_col]
 	}
 }
 
