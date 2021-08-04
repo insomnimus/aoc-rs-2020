@@ -1,0 +1,79 @@
+const DATA: &str = include_str!("day12.txt");
+
+enum Action{
+	North(usize),
+	South(usize),
+	East(usize),
+	West(usize),
+	Forward(usize),
+	Left(usize),
+	Right(usize),
+}
+
+impl Action{
+	fn parse(s: &str) -> Self {
+		let val = s[1..].parse::<usize>().unwrap();
+		match s.chars().next().unwrap() {
+			'N' => Self::North(val),
+			'S'=> Self::South(val),
+			'E' => Self::East(val),
+			'W' => Self::West(val),
+			'F' => Self::Forward(val),
+			'L' => Self::Left(val),
+			'R' => Self::Right(val),
+			ch=> panic!("illegal char {}", ch)
+		}
+	}
+}
+
+struct Ship{
+	x: isize,
+	y: isize,
+	direction: isize,
+}
+
+impl Ship{
+	fn new() -> Self{
+		Self{
+			x: 0,
+			y: 0,
+			direction: 180,
+		}
+	}
+	
+	fn take_action(&mut self, a: Action) {
+		match a{
+			Action::Forward(n) => self.move_forward(n),
+			Action::Left(n) => self.turn(n ),
+			Action::Right(n) => self.turn(-(n )),
+			Action::North(n) => self.y+=n ,
+			Action::South(n)=> self.y-=n ,
+			Action::East(n)=> self.x -= n ,
+			Action::West(n)=> self.x += n ,
+		};
+	}
+	
+	fn turn(&mut self, degrees: isize) {
+		self.direction = (self.direction + degrees) % 360
+	}
+	
+	fn move_forward(&mut self, n: usize) {
+		match self.duration{
+			0 => self.x+=n,
+			90=> self.y+=n,
+			180=> self.x-=n,
+			270 => self.y -= n,
+			_=> panic!("invalid direction: {}", self.direction),
+		};
+	}
+}
+
+fn main() {
+	let mut ship = Ship::new();
+	for a in DATA.lines().map(Action::parswe) {
+		ship.take_action(a);
+	}
+	
+	let p1 = ship.x + ship.y;
+	println!("day12-part1 = {}", p1);
+}
