@@ -1,0 +1,65 @@
+const DATA: &str = include_str!("day13.txt");
+
+fn part1(current_time: u128, times: &[u128]) -> u128{
+	times
+	.iter()
+	.map(|n| {
+		let delta = current_time % *n;
+		if delta == 0 {
+			(*n, 0)
+		}else{
+			(*n, *n - delta)
+		}
+	})
+	.reduce(|x, y| {
+		if x.1 < y.1 {
+			x
+		}else {
+			y
+		}
+	})
+	.map(|(id, time)| id * time)
+	.unwrap()
+}
+
+fn part2(times: &[(u128, u128)]) -> u128{
+	let mut time= times[0].1;
+	
+	loop{
+		// try each bus
+		if times[1..]
+		.iter()
+		.all(|(i, n)| {
+			if *n < time {
+				false
+			}else{
+				(time + *i) % *n == 0
+			}
+		}) {
+			return time;
+		}
+		time+=time;
+	}
+}
+
+fn main() {
+	let mut lines= DATA.lines();
+	let current = lines.next().unwrap().parse::<u128>().unwrap();
+	let mut times = Vec::new();
+	
+	let offset_times: Vec<_> = lines
+	.next()
+	.unwrap()
+	.split(',')
+	.enumerate()
+	.filter_map(|(i, s)| s.parse::<u128>().map(|n| {
+		times.push(n);
+		(i, n)
+	}).ok())
+	.collect();
+	
+	let p1= part1(current, &times);
+	let p2 = part2(&offset_times);
+	
+	println!("day13-part1 = {}\nday13-part2 = {}", p1, p2);
+}

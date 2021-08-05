@@ -1,0 +1,77 @@
+const DATA: &str = include_str!("day13.txt");
+
+// Following 3 functions are taken from https://rosettacode.org/wiki/Category:Rust
+// with minor modifications.
+fn egcd(a: usize, b: usize) -> (usize, usize, usize) {
+    if a == 0 {
+        (b, 0, 1)
+    } else {
+			let (g, x, y) = egcd(b%a, a);
+			(g, y - (b / a) * x, x)
+			}
+}
+ 
+fn mod_inv(x: usize, n: usize) -> Option<usize> {
+    let (g, x, _) = egcd(x, n);
+    if g == 1 {
+        Some((x % n + n) % n)
+    } else {
+        None
+    }
+}
+ 
+fn chinese_remainder(residues: &[usize], modulii: &[usize]) -> Option<usize> {
+    let prod = modulii.iter().product::<usize>();
+ 
+    let mut sum = 0;
+ 
+    for (&residue, &modulus) in residues.iter().zip(modulii) {
+        let p = prod / modulus;
+        sum += residue * mod_inv(p, modulus)? * p
+    }
+ 
+    Some(sum % prod)
+}
+ 
+fn part1(current_time: usize, times: &[usize]) -> usize{
+	times
+	.iter()
+	.map(|n| {
+		let delta = current_time % *n;
+		if delta == 0 {
+			(*n, 0)
+		}else{
+			(*n, *n - delta)
+		}
+	})
+	.reduce(|x, y| {
+		if x.1 < y.1 {
+			x
+		}else {
+			y
+		}
+	})
+	.map(|(id, time)| id * time)
+	.unwrap()
+}
+
+fn main() {
+	let mut lines= DATA.lines();
+	let current = lines.next().unwrap().parse::<usize>().unwrap();
+	let mut offsets= Vec::new();
+	
+	let times: Vec<_> = lines
+	.next()
+	.unwrap()
+	.split(',')
+	.enumerate()
+	.filter_map(|(i, s)| s.parse::<usize>().map(|n| {
+		offsets.push(*i);
+		n
+	}).ok())
+	.collect();
+	
+	let p1= part1(current, &times);
+	let p2 = chinese_remainder(&times, &offsets).unwrap();
+	println!("day13-part1 = {}\nday13-part2 = {}", p1, p2);
+}
